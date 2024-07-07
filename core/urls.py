@@ -7,7 +7,8 @@ from .views import (
     UserDetailView,
     OrganisationListView,
     OrganisationDetailView,
-    AddUserToOrganisationView
+    AddUserToOrganisationView,
+    UserListView
 )
 
 urlpatterns = [
@@ -17,4 +18,6 @@ urlpatterns = [
     path('api/organisations', OrganisationListView.as_view(), name='organisation-list'),
     path('api/organisations/<str:pk>', OrganisationDetailView.as_view(), name='organisation-detail'),
     path('api/organisations/<str:orgId>/users', AddUserToOrganisationView.as_view(), name='add-user-to-organisation'),
+    
+    path('api/users', UserListView.as_view(), name='user-list'),
 ]

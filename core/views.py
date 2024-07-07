@@ -165,3 +165,8 @@ class AddUserToOrganisationView(generics.GenericAPIView):
                     status="error",
                     message=str(e),
                 ), status=status.HTTP_400_BAD_REQUEST)
+            
+            
+class UserListView(generics.ListAPIView):
+    serializer_class = UserSerializer
+    queryset = User.objects.all()
