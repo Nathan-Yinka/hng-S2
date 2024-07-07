@@ -11,7 +11,6 @@ from .views import (
 )
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
     path('auth/register', RegisterView.as_view(), name='register'),
     path('auth/login', LoginView.as_view(), name='login'),
     path('api/users/<str:pk>', UserDetailView.as_view(), name='user-detail'),
