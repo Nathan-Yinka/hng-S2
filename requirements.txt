@@ -7,3 +7,4 @@ sqlparse
 gunicorn
 python-dotenv
 psycopg2-binary
+dj_database_url
