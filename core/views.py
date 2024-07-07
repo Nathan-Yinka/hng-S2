@@ -41,7 +41,9 @@ class LoginView(generics.GenericAPIView):
         try:
             serializer.is_valid(raise_exception=True)
         except ValidationError as exc:
-            return Response({"errors": exc.detail}, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
+            return Response({
+                "errors": format_validation_errors(exc.detail)
+            }, status=status.HTTP_422_UNPROCESSABLE_ENTITY)
         
         user = serializer.validated_data['user']
          
