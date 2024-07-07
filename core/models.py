@@ -21,7 +21,7 @@ class User(AbstractBaseUser):
     userId = models.AutoField(primary_key=True, editable=False)
     firstName = models.CharField(max_length=30, null=False)
     lastName = models.CharField(max_length=30, null=False)
-    email = models.EmailField(unique=True, null=False, validators=[EmailValidator()])
+    email = models.EmailField(unique=True, null=False,)
     password = models.CharField(max_length=128, null=False)
     phone = models.CharField(max_length=15, blank=True, null=True)
 
