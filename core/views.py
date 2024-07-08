@@ -61,7 +61,7 @@ class LoginView(generics.GenericAPIView):
                 'message': 'Authentication failed',
                 'statusCode': 401
             }, status=status.HTTP_401_UNAUTHORIZED)
-
+            
 
 class UserDetailView(generics.RetrieveAPIView):
     queryset = User.objects.all()
@@ -69,13 +69,50 @@ class UserDetailView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
     
     def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
+        user_id = kwargs.get('id')
+        current_user = request.user
+        
+        try:
+            User.objects.get(userId=user_id)
+        except User.DoesNotExist:
+            return Response(standard_response(
+                status="fail",
+                message="User not found."
+            ), status=status.HTTP_404_NOT_FOUND)
+
+        if str(current_user.userId) == user_id:
+            instance = current_user
+        else:
+            # Condition 2: Check if the user_id is in an organization created by the current user
+            created_organizations = Organisation.objects.filter(users=current_user)
+            user_in_created_org = User.objects.filter(userId=user_id, organisations__in=created_organizations).exists()
+            print(user_in_created_org)
+            
+            # Condition 3: Check if the current user and user_id are in the same organization
+            common_organizations = Organisation.objects.filter(users=current_user).filter(users__userId=user_id).exists()
+
+            if user_in_created_org or common_organizations:
+                try:
+                    instance = User.objects.get(userId=user_id)
+                except User.DoesNotExist:
+                    return Response(standard_response(
+                        status="fail",
+                        message="User not found."
+                    ), status=status.HTTP_404_NOT_FOUND)
+            else:
+                return Response(standard_response(
+                    status="fail",
+                    message="You do not have permission to view this user."
+                ), status=status.HTTP_403_FORBIDDEN)
+
         serializer = self.get_serializer(instance)
         return Response(standard_response(
             status="success",
             message="User retrieved successfully",
             data=serializer.data
         ), status=status.HTTP_200_OK)
+
+
 
 class OrganisationListView(generics.ListCreateAPIView):
     serializer_class = OrganisationSerializer
@@ -135,7 +172,14 @@ class AddUserToOrganisationView(generics.GenericAPIView):
 
     def post(self, request, orgId):
         try:
-            organisation = get_object_or_404(Organisation, orgId=orgId)
+            try:
+                organisation = Organisation.objects.get(orgId=orgId)
+            except Organisation.DoesNotExist:
+                return Response(standard_response(
+                    status="error",
+                    message="Organisation not found",
+                ), status=status.HTTP_404_NOT_FOUND)
+
             user_id = request.data.get('userId')
 
             if not user_id:
@@ -144,7 +188,13 @@ class AddUserToOrganisationView(generics.GenericAPIView):
                     message="userId is required",
                 ), status=status.HTTP_400_BAD_REQUEST)
 
-            user = get_object_or_404(User, userId=user_id)
+            try:
+                user = User.objects.get(userId=user_id)
+            except User.DoesNotExist:
+                return Response(standard_response(
+                    status="error",
+                    message="User not found",
+                ), status=status.HTTP_404_NOT_FOUND)
             
             if organisation.users.filter(userId=user.userId).exists():
                 return Response(standard_response(
@@ -158,15 +208,9 @@ class AddUserToOrganisationView(generics.GenericAPIView):
             return Response(standard_response(
                 status="success",
                 message="User added to organisation successfully",
-                data={}
             ), status=status.HTTP_200_OK)
         except ValueError as e:
             return Response(standard_response(
                     status="error",
                     message=str(e),
                 ), status=status.HTTP_400_BAD_REQUEST)
-            
-            
-class UserListView(generics.ListAPIView):
-    serializer_class = UserSerializer
-    queryset = User.objects.all()
